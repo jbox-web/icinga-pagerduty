@@ -9,6 +9,7 @@
 # here without touching the rest of the tree.
 require "json"
 require "option_parser"
+require "watch"
 
 require "./icinga-pagerduty"
 
@@ -64,8 +65,21 @@ def run_daemon(spool : String) : Nil
 
   {Signal::TERM, Signal::INT}.each { |signal| signal.trap { daemon.stop } }
 
+  # An event landing in queue/ is processed at once; the periodic pass stays
+  # as the safety net. Files being written start with `.`, which the filter
+  # treats as hidden: only the rename into place is reported.
+  filter = Watch::Filter.new([queue.queue_dir.to_s]) do |event|
+    !event.kind.deleted? && event.path.ends_with?(".json")
+  end
+  watcher = Watch::Watcher.new(filter, coalesce: 20.milliseconds)
+  watcher.on_fallback { |error| puts "no native file events (#{error.message}): watching the queue by polling" }
+  watcher.on_error { |error| puts "watching the queue failed: #{error.class}: #{error.message}" }
+  watching = Channel(Nil).new
+  spawn { watcher.run(watching) { daemon.queued } }
+
   puts "#{IcingaPagerduty.version_line} started: spool #{spool}, endpoint #{url}"
   daemon.run
+  watching.close
   puts "stopped"
 end
 

@@ -165,6 +165,46 @@ Spectator.describe IcingaPagerduty::Daemon do
     end
   end
 
+  # An hour between passes: only an arrival can start one within the example.
+  describe "#queued" do
+    let(daemon) { IcingaPagerduty::Daemon.new(queue, deliver, log: log, poll_interval: 1.hour) }
+
+    it "processes the queue as soon as an event arrives" do
+      done = Channel(Nil).new
+      spawn { daemon.run; done.send(nil) }
+      wait_until { daemon.waiting? }
+
+      queue.push(event("trigger", "web1"))
+      daemon.queued
+
+      wait_until(limit: 1.second) { !sent.empty? }
+      daemon.stop
+      done.receive
+      expect(sent).to eq([event("trigger", "web1")])
+    end
+
+    context "during a backoff" do
+      let(answers) { [Result.new(Outcome::Retry, "HTTP 503")] }
+
+      # The backoff spares PagerDuty while it fails: an arrival must not end
+      # it early, or a burst of notifications would hammer it.
+      it "processes nothing before the backoff ends" do
+        queue.push(event("trigger", "web1"))
+        done = Channel(Nil).new
+        spawn { daemon.run; done.send(nil) }
+        wait_until { log.to_s.includes?("retry in 60s") }
+
+        queue.push(event("resolve", "web1"))
+        daemon.queued
+        sleep 100.milliseconds
+        daemon.stop
+        done.receive
+
+        expect(sent).to eq([event("trigger", "web1")])
+      end
+    end
+  end
+
   describe "#run" do
     it "delivers what is queued until stopped" do
       queue.push(event("trigger", "web1"))

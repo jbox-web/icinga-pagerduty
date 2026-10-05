@@ -33,6 +33,7 @@
 #     must be able to relink against a modified GMP. Shipping the object files
 #     or a dynamically linked build is a product decision, not a build detail.
 shard   | baked_file_system | lib/baked_file_system/LICENSE
+shard   | watch             | lib/watch/LICENSE
 clib    | openssl           | Apache-2.0
 clib    | pcre2             | BSD-3-Clause
 clib    | libyaml           | MIT

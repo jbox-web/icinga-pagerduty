@@ -27,8 +27,10 @@ Icinga ──enqueue──▶ /var/spool/icinga-pagerduty/queue/ ──daemon─
   temporary file renamed into place, so a half-written event is never visible.
   No network access: the notification returns at once whatever the state of
   PagerDuty.
-- **`icinga-pagerduty daemon`** runs under systemd and drains the queue every
-  2 s, **strictly in arrival order**:
+- **`icinga-pagerduty daemon`** runs under systemd and drains the queue
+  **strictly in arrival order**, as soon as an event lands in it — inotify on
+  Linux, FSEvents on macOS, through [watch.cr](https://github.com/jbox-web/watch.cr)
+  — and every 2 s as a safety net:
   - accepted (2xx) → removed from the queue;
   - network or TLS error, 403 (how the Events API v1 throttles), 408, 429,
     5xx, 3xx or any other unexpected answer → the pass stops and the event
@@ -38,7 +40,11 @@ Icinga ──enqueue──▶ /var/spool/icinga-pagerduty/queue/ ──daemon─
     queue goes on. Refused events are purged 7 days after their refusal.
 
 Intervals are pdagent's own (`backoff_interval_secs`, `cleanup_threshold_secs`,
-`cleanup_interval_secs`), except the 10 s send interval, shortened to 2 s.
+`cleanup_interval_secs`), except the 10 s send interval: events go out as they
+arrive, with a 2 s pass behind. An event arriving during a 60 s backoff waits
+for its end, like the rest of the queue. Where the kernel refuses a file watch
+(inotify's `max_user_watches` exhausted), the daemon says so in its log and
+watches the queue by polling.
 
 ### The event
 

@@ -21,6 +21,11 @@ dependencies:
   baked_file_system:
     github: schovi/baked_file_system
     version: ~> 0.14.0
+  # Native file watching (inotify, FSEvents, polling fallback): the daemon
+  # processes the queue as soon as an event lands in it.
+  watch:
+    github: jbox-web/watch.cr
+    version: ~> 0.1.0
 
 development_dependencies:
   ameba:

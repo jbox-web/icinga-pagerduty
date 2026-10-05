@@ -11,6 +11,12 @@ visible in the field.
 
 ## [Unreleased]
 
+### Changed
+
+- The daemon processes the queue as soon as an event lands in it (inotify on
+  Linux, FSEvents on macOS, through watch.cr) instead of up to 2 s later; the
+  2 s pass stays as a safety net, and an arrival never cuts a backoff short.
+
 ## [0.1.0] - 2026-10-05
 
 ### Added

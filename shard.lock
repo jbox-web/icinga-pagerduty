@@ -12,3 +12,7 @@ shards:
     git: https://gitlab.com/arctic-fox/spectator.git
     version: 0.12.4
 
+  watch:
+    git: https://github.com/jbox-web/watch.cr.git
+    version: 0.1.0
+

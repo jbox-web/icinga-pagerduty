@@ -29,8 +29,10 @@ module IcingaPagerduty
       @poll_interval : Time::Span = POLL_INTERVAL,
     )
       @stopping = false
+      @waiting = false
       # Buffered: stop must never block, even when nobody is waiting yet.
       @wake = Channel(Nil).new(1)
+      @arrivals = Channel(Nil).new(1)
     end
 
     def run : Nil
@@ -45,11 +47,38 @@ module IcingaPagerduty
         break if @stopping
 
         # Sleeps `delay`, or less if stop is called in the meantime: a 60 s
-        # backoff must not delay a systemd stop.
-        select
-        when @wake.receive
-        when timeout(delay)
+        # backoff must not delay a systemd stop. Outside a backoff, an event
+        # queued in the meantime starts the next pass at once; during one, it
+        # waits in its buffered channel for the backoff to end.
+        @waiting = true
+        if delay == BACKOFF
+          select
+          when @wake.receive
+          when timeout(delay)
+          end
+        else
+          select
+          when @wake.receive
+          when @arrivals.receive
+          when timeout(delay)
+          end
         end
+        @waiting = false
+      end
+    end
+
+    # True while the daemon waits for its next pass.
+    def waiting? : Bool
+      @waiting
+    end
+
+    # Called when an event lands in the queue: processes it without waiting
+    # for the next periodic pass. Never blocks, and arrivals coming faster than
+    # passes fold into one, since a pass takes the whole queue anyway.
+    def queued : Nil
+      select
+      when @arrivals.send(nil)
+      else
       end
     end
 
