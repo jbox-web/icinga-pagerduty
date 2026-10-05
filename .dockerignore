@@ -1,0 +1,12 @@
+# Mirrors .gitignore, and must keep doing so: the Dockerfile copies the whole
+# checkout, and version.cr stamps the binary `-dirty` as soon as `git status`
+# inside the build sees anything git does not ignore. Excluding a tracked file
+# here would therefore mark every release dirty.
+/docs/
+/lib/
+/packages/
+/licenses/
+/bin/*
+!/bin/.keep
+.DS_Store
+/.spectator-failures

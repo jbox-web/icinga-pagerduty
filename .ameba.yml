@@ -1,0 +1,30 @@
+# Ameba configuration, written out rather than left implicit: the defaults move
+# between ameba releases, and a project that never states its own gets its rule
+# set changed underneath it by a `shards update`.
+#
+# Run it through `mise dev:ameba`, never `bin/ameba` directly — the task bounds
+# the analysis with `timeout 180`, because ameba can spin at 100% CPU
+# indefinitely on some inputs.
+#
+# Version this file was written against: ameba 1.6.4.
+
+# lib/ holds vendored shards, docs/ and licenses/ are generated. None of them
+# are ours to lint, and linting lib/ alone triples the run time.
+Globs:
+  - "**/*.cr"
+  - "!lib"
+  - "!docs"
+  - "!licenses"
+
+# Documentation of public types is not enforced: this template ships almost no
+# public API, and turning the rule on here would only teach every project
+# started from it to silence the rule rather than answer it. Enable it once the
+# project has an API worth documenting.
+Documentation/DocumentationAdmonition:
+  Enabled: true
+  # TODO markers are allowed to live in the tree — mise.toml and the CI
+  # workflows both carry one pointing at crystal-lang/crystal#16746, which is
+  # not ours to close. FIXME and BUG still fail the build.
+  Admonitions:
+    - FIXME
+    - BUG

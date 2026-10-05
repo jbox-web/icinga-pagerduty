@@ -1,0 +1,30 @@
+name: icinga-pagerduty
+
+version: 0.1.0
+
+description: Delivers Icinga 2 notifications to PagerDuty through a persistent local queue
+
+crystal: ">= 1.20.0"
+
+license: MIT
+
+authors:
+  - Nicolas Rodriguez <nico@nicoladmin.fr>
+
+targets:
+  icinga-pagerduty:
+    main: src/cli.cr
+
+dependencies:
+  # Embeds the assembled licenses/ folder into the binary at compile time.
+  # See src/icinga-pagerduty/licenses.cr and scripts/harvest-licenses.sh.
+  baked_file_system:
+    github: schovi/baked_file_system
+    version: ~> 0.14.0
+
+development_dependencies:
+  ameba:
+    github: crystal-ameba/ameba
+  spectator:
+    gitlab: arctic-fox/spectator
+    version: ~> 0.12.0

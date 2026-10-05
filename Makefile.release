@@ -1,0 +1,37 @@
+#############
+# Constants #
+#############
+
+PROGRAM_NAME = icinga-pagerduty
+# CLI entrypoint. src/$(PROGRAM_NAME).cr is the library, it has no main.
+SOURCE_FILE  = src/cli.cr
+OUTPUT_FILE  = bin/$(PROGRAM_NAME)-${TARGETOS}-${TARGETARCH}
+# Keep in sync with DEFAULT_COMPILE_OPTS_RELEASE in mise.toml, which compiles
+# the released macOS binaries. --static is specific to this file: only the
+# Linux binaries are linked statically, inside Alpine.
+COMPILE_OPTS = --threads 4 --release --error-trace --static
+
+#########
+# Tasks #
+#########
+
+debug: ## Display build environment config
+	@uname -a
+	@echo "TARGETPLATFORM: ${TARGETPLATFORM}"
+	@echo "TARGETOS: ${TARGETOS}"
+	@echo "TARGETARCH: ${TARGETARCH}"
+	@echo "TARGETVARIANT: ${TARGETVARIANT}"
+	@echo "SOURCE_FILE: $(SOURCE_FILE)"
+	@echo "OUTPUT_FILE: $(OUTPUT_FILE)"
+
+deps: debug ## Install production dependencies
+	shards install --production
+
+# Mirrors the dev:licenses mise task, which is unavailable here: the released
+# Linux binaries are built inside Alpine, where mise is not installed. Ordered
+# after deps because the shard entries of licenses.manifest read lib/*/LICENSE.
+licenses: deps ## Assemble the licenses folder baked into the binary
+	bash scripts/harvest-licenses.sh
+
+release: licenses ## Compile to production binary (static mode)
+	crystal build $(COMPILE_OPTS) -o $(OUTPUT_FILE) $(SOURCE_FILE)

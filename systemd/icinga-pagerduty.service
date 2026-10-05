@@ -1,0 +1,27 @@
+# Delivers the events Icinga queues with `icinga-pagerduty enqueue`.
+#
+# The spool is shared with Icinga: it writes as user nagios, the daemon reads
+# and deletes. The spool directories are expected group nagios, setgid, 2770,
+# so every event file keeps that group; Group=nagios below lets the daemon read
+# them. ProtectSystem=strict makes everything read-only but the spool.
+[Unit]
+Description=Deliver queued Icinga notifications to PagerDuty
+Documentation=https://github.com/jbox-web/icinga-pagerduty
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=icinga-pagerduty
+Group=nagios
+ExecStart=/usr/local/bin/icinga-pagerduty daemon --spool /var/spool/icinga-pagerduty
+Restart=always
+RestartSec=5
+UMask=0027
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/spool/icinga-pagerduty
+
+[Install]
+WantedBy=multi-user.target
