@@ -11,6 +11,8 @@ visible in the field.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-05
+
 ### Changed
 
 - The daemon processes the queue as soon as an event lands in it (inotify on
