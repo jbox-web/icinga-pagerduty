@@ -40,18 +40,44 @@ Spectator.describe IcingaPagerduty::Sender do
     end
   end
 
-  context "after a failed delivery" do
-    it "opens a fresh connection for the next one" do
-      api = FakeEventsApi.new(202, delay: 300.milliseconds)
-      sender = IcingaPagerduty::Sender.new(api.url, read_timeout: 100.milliseconds)
-      sender.deliver(body)
-      api.delay = Time::Span.zero
-      result = sender.deliver(body)
-      sender.close
-      api.close
+  # HTTP::Client closes the connection itself after an IO error, but not after
+  # an answer it cannot parse: the Sender has to drop it, or every later
+  # delivery would read from the same broken connection.
+  context "after an answer that is not HTTP" do
+    it "opens a fresh connection for the next delivery" do
+      server = TCPServer.new("127.0.0.1", 0)
+      accepted = [] of TCPSocket
+      connections = 0
+      spawn do
+        while client = server.accept?
+          accepted << client
+          connections += 1
+          broken = connections == 1
+          spawn do
+            # The first connection answers garbage and stays open; the
+            # others answer like PagerDuty.
+            while HTTP::Request.from_io(client).is_a?(HTTP::Request)
+              client << (broken ? "NOT-HTTP\r\n\r\n" : "HTTP/1.1 202 Accepted\r\nContent-Length: 2\r\n\r\n{}")
+              client.flush
+            end
+          rescue IO::Error
+          end
+        end
+      end
+      sender = IcingaPagerduty::Sender.new(URI.parse("http://127.0.0.1:#{server.local_address.port}/x"))
 
-      expect(result.outcome).to eq(IcingaPagerduty::Sender::Outcome::Delivered)
-      expect(api.requests.last[:remote]).not_to eq(api.requests.first[:remote])
+      first = sender.deliver(body)
+      second = sender.deliver(body)
+      sender.close
+      server.close
+      # Close our side too: a connection fiber left reading a peer that went
+      # away with a request half-sent can spin, and on one thread that freezes
+      # every example after this one.
+      accepted.each(&.close)
+
+      expect(first.outcome).to eq(IcingaPagerduty::Sender::Outcome::Retry)
+      expect(second.outcome).to eq(IcingaPagerduty::Sender::Outcome::Delivered)
+      expect(connections).to eq(2)
     end
   end
 

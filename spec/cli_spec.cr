@@ -36,8 +36,25 @@ Spectator.describe "icinga-pagerduty" do
   def run(args : Array(String), env : Hash(String, String) = {} of String => String) : CliRun
     stdout = IO::Memory.new
     stderr = IO::Memory.new
-    status = Process.run(BINARY, args, env: env, clear_env: true, output: stdout, error: stderr)
+    process = Process.new(BINARY, args, env: env, clear_env: true, output: stdout, error: stderr)
+    status = wait_bounded(process, "icinga-pagerduty #{args.join(' ')}")
     CliRun.new(status.exit_code, stdout.to_s, stderr.to_s)
+  end
+
+  # A regression that leaves the binary running — a daemon that should have
+  # refused to start, or ignores SIGTERM — fails the example instead of
+  # hanging the whole suite until the task's own timeout.
+  def wait_bounded(process : Process, what : String, limit : Time::Span = 10.seconds) : Process::Status
+    done = Channel(Process::Status).new(1)
+    spawn { done.send(process.wait) }
+    select
+    when status = done.receive
+      status
+    when timeout(limit)
+      process.terminate(graceful: false)
+      done.receive
+      raise "#{what} still running after #{limit}"
+    end
   end
 
   def queued : Array(String)
@@ -163,7 +180,7 @@ Spectator.describe "icinga-pagerduty" do
         sleep 10.milliseconds
       end
       process.terminate
-      status = process.wait
+      status = wait_bounded(process, "the daemon after SIGTERM")
       api.close
 
       expect(status.exit_code).to eq(0)

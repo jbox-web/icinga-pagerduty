@@ -5,9 +5,6 @@ require "http/server"
 class FakeEventsApi
   getter requests = [] of {path: String, content_type: String?, body: String, remote: String}
 
-  # Writable so a spec can make the API slow, then fast again.
-  property delay : Time::Span
-
   def initialize(@status : Int32, @delay : Time::Span = Time::Span.zero)
     @server = HTTP::Server.new do |context|
       request = context.request

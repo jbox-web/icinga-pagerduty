@@ -172,6 +172,10 @@ Spectator.describe IcingaPagerduty::Queue do
     end
 
     it "never stands in the way of a daemon starting" do
+      # The lock file exists, as after any daemon ever ran: the probe opens
+      # and locks it, and must let go at once.
+      queue.lock
+      queue.unlock
       IcingaPagerduty::Queue.new(root).daemon_running?
 
       expect { queue.lock }.not_to raise_error
