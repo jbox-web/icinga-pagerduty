@@ -1,12 +1,13 @@
 # Ameba configuration, written out rather than left implicit: the defaults move
 # between ameba releases, and a project that never states its own gets its rule
-# set changed underneath it by a `shards update`.
+# set changed underneath it by an upgrade of the mise tool.
 #
-# Run it through `mise dev:ameba`, never `bin/ameba` directly — the task bounds
-# the analysis with `timeout 180`, because ameba can spin at 100% CPU
+# Run it through `mise dev:ameba`, never `ameba` directly — the task bounds the
+# analysis with its own 180s `timeout`, because ameba can spin at 100% CPU
 # indefinitely on some inputs.
 #
-# Version this file was written against: ameba 1.6.4.
+# Version this file was written against: ameba 1.6.4; checked against 1.7.0,
+# the version mise.toml pins.
 
 # lib/ holds vendored shards, docs/ and licenses/ are generated. None of them
 # are ours to lint, and linting lib/ alone triples the run time.

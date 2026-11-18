@@ -11,6 +11,21 @@ visible in the field.
 
 ## [Unreleased]
 
+### Fixed
+
+- The macOS binaries no longer depend on Homebrew's OpenSSL: they link
+  `openssl@4` statically and only load libraries macOS ships
+- The embedded notices of musl, PCRE2 and zlib carry their authors' copyright
+  lines instead of a license template with blanks, the libgcc notice names
+  GPL-3.0-or-later, and the notices of libraries the binary does not link
+  (libyaml, libxml2, liblzma, GMP) are gone
+
+### Changed
+
+- Releases are built and published by crystalreleaser
+  (`.crystalreleaser.yml`, `.github/workflows/release.yml`); the assets keep
+  their names, `icinga-pagerduty-<os>-<arch>` and its `.sha256`
+
 ## [0.2.0] - 2026-10-05
 
 ### Changed

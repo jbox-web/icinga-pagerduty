@@ -85,28 +85,28 @@ Spectator.describe IcingaPagerduty::Sender do
   # event itself: it must stay queued. 403 is how the Events API v1 throttles,
   # and pdagent retried it, as it retried any 3xx (pdagent/sendevent.py).
   {% for status in [301, 403, 408, 429, 500, 503] %}
-    context "when PagerDuty answers {{status}}" do
+    context "when PagerDuty answers {{ status }}" do
       it "asks for a later retry" do
-        api = FakeEventsApi.new({{status}})
+        api = FakeEventsApi.new({{ status }})
         result = IcingaPagerduty::Sender.new(api.url).deliver(body)
         api.close
 
         expect(result.outcome).to eq(IcingaPagerduty::Sender::Outcome::Retry)
-        expect(result.message).to eq(%(HTTP {{status}}: {"status":"stub"}))
+        expect(result.message).to eq(%(HTTP {{ status }}: {"status":"stub"}))
       end
     end
   {% end %}
 
   # A bad key or a malformed event fails identically on every retry.
   {% for status in [400, 404, 422] %}
-    context "when PagerDuty answers {{status}}" do
+    context "when PagerDuty answers {{ status }}" do
       it "reports the event as rejected" do
-        api = FakeEventsApi.new({{status}})
+        api = FakeEventsApi.new({{ status }})
         result = IcingaPagerduty::Sender.new(api.url).deliver(body)
         api.close
 
         expect(result.outcome).to eq(IcingaPagerduty::Sender::Outcome::Rejected)
-        expect(result.message).to eq(%(HTTP {{status}}: {"status":"stub"}))
+        expect(result.message).to eq(%(HTTP {{ status }}: {"status":"stub"}))
       end
     end
   {% end %}

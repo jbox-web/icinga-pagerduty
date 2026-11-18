@@ -11,10 +11,21 @@
 #   disagree. What belongs here is what mise cannot install and the tasks shell
 #   out to — plus mise itself, which has to come from somewhere.
 #
-#   Nor the libraries Crystal links against (libyaml, pcre2, openssl, gmp…):
-#   the mise-installed toolchain brings what it needs, and listing them here
-#   invites a version skew that is painful to diagnose. Add one only when a
-#   link actually fails without it.
+#   Nor the libraries the mise-installed Crystal embeds (libgc, pcre2, libyaml,
+#   libffi): listing them here invites a version skew that is painful to
+#   diagnose. It does NOT embed OpenSSL: a program that requires `openssl` or
+#   `http/client` links the one pkg-config finds, Homebrew's on macOS, and
+#   dynamically by default. A project that needs it lists it below.
+
+# NOT LISTED ON PURPOSE: WHAT CRYSTALLINE LOADS
+#   crystalline, the Crystal language server that mise.toml installs for the
+#   editor, is not a self-contained binary on macOS: it loads Homebrew's llvm,
+#   libyaml, pcre2 and bdw-gc (otool -L). Three of those are libraries the
+#   compiler embeds, the very ones the paragraph above keeps out of this file.
+#   Whoever wants the language server installs them by hand (`brew install
+#   llvm libyaml pcre2 bdw-gc`); whoever does not sets
+#   MISE_DISABLE_TOOLS=aqua:elbywan/crystalline, as the CI does, and mise
+#   skips it. Nothing else in the project needs it.
 
 # The Apple bash is 3.2, from 2007: no associative arrays, no `declare -n`,
 # none of what a script written this decade assumes. Either install a modern
@@ -22,17 +33,20 @@
 brew 'bash'
 
 # The task runner and the toolchain it pins. Everything else in the project is
-# driven through `mise <task>`, never through the raw command.
+# driven through `mise <task>`, never through the raw command. mise.toml sets a
+# min_version (2026.10.2): the tasks that can spin forever are bounded by mise's
+# own task `timeout`, which is why no GNU coreutils is needed here.
 brew 'mise'
+
+# Line coverage for `mise dev:coverage`: kcov reads the DWARF of the spec binary.
+brew 'kcov'
 
 # --- From here down: keep only what this project actually uses -------------
 
-# Example of a project-specific entry: a service the specs or the benchmark
-# talk to. Replace or remove.
-# brew 'ollama'
+# The darwin release binaries link openssl@4 statically (static_libs of
+# .crystalreleaser.yml): `mise release:static` on a Mac needs the formula.
+brew 'openssl@4'
 
-# Docker is a cask, not a formula. This template ships binaries, so its release
-# path goes through `docker buildx bake` (release:static, dev:docker-image) and
-# Docker is required, not optional. Remove it if the project stops shipping
-# Linux static binaries.
+# crystalreleaser builds the linux release binaries in a container
+# (release:static, docker strategy of .crystalreleaser.yml).
 cask 'docker'

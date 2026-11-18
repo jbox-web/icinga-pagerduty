@@ -1,4 +1,4 @@
-libgcc is distributed under GPL-2.0/LGPL-2.1 WITH the following exception, which permits its use in binaries of any license:
+libgcc is distributed under GPL-3.0-or-later WITH the following exception, which permits its use in binaries of any license:
 
 GCC RUNTIME LIBRARY EXCEPTION
 

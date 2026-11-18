@@ -165,12 +165,12 @@ a runaway linter from burning an afternoon.
 | `mise dev:format` / `dev:format-check` | `crystal tool format` |
 | `mise dev:ameba` | Static analysis, bounded at 180 s |
 | `mise dev:docs` | API documentation into `docs/` |
+| `mise dev:coverage` | Spec line coverage with kcov, into `coverage/` |
 | `mise dev:clean` | Remove `bin/*` and `lib/` |
-| `mise dev:docker-image` | Local multi-platform Docker image |
 | `mise dev:fix-shards-command` | Work around crystal-lang/crystal#16746 (missing `shards`) |
 | `mise release:deps` | `shards install --production` |
 | `mise release:build` | Release binary for the host platform, plus its `.sha256` |
-| `mise release:static` | Linux static binaries for amd64 and arm64, via Docker |
+| `mise release:static` | The release, rehearsed by crystalreleaser into `dist/`, nothing published |
 
 `icinga-pagerduty --version` prints one self-naming line, `icinga-pagerduty
 info [--json]` the decomposed build provenance.
@@ -179,15 +179,18 @@ info [--json]` the decomposed build provenance.
 
 A statically linked binary carries its dependencies' code, so it carries their
 notices too: `scripts/harvest-licenses.sh` assembles them from
-`licenses.manifest` and `licenses-spdx/` into `licenses/`, which
+`licenses.manifest`, `licenses-spdx/` and `licenses-upstream/` into
+`licenses/`, which
 `baked_file_system` embeds at compile time. Add a `shard` line to
 `licenses.manifest` for every runtime dependency added to `shard.yml`.
 
 ## Releasing
 
-Push a tag. `.github/workflows/release_binaries.yml` creates the release, then
-attaches the Linux static binaries built in Alpine and the two macOS binaries,
-each with its `.sha256`.
+Push a tag. `.github/workflows/release.yml` builds the binaries with
+[crystalreleaser](https://github.com/jbox-web/crystalreleaser) (`.crystalreleaser.yml`)
+and publishes them: `icinga-pagerduty-<os>-<arch>` for linux and darwin, amd64
+and arm64, each with its `.sha256`. The macOS binaries link OpenSSL statically
+and only load libraries macOS ships.
 
 ## License
 

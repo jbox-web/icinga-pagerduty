@@ -1,7 +1,8 @@
 # Ignore generated data
 /docs/
 /lib/
-/packages/
+/dist/
+/coverage/
 
 # Assembled by scripts/harvest-licenses.sh from licenses.manifest and
 # licenses-spdx/, both of which are tracked.
