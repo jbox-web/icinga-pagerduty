@@ -11,6 +11,8 @@ visible in the field.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-18
+
 ### Fixed
 
 - The macOS binaries no longer depend on Homebrew's OpenSSL: they link
